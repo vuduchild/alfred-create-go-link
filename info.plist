@@ -1,0 +1,296 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>bundleid</key>
+	<string>net.royr.alfred-create-go-link</string>
+	<key>connections</key>
+	<dict>
+		<key>5A97905D-ADF7-46B2-B527-50271F278C43</key>
+		<array>
+			<dict>
+				<key>destinationuid</key>
+				<string>AAD2B89C-7893-4919-8AE7-FB672F3A6297</string>
+				<key>modifiers</key>
+				<integer>0</integer>
+				<key>modifiersubtext</key>
+				<string></string>
+				<key>vitoclose</key>
+				<false/>
+			</dict>
+		</array>
+		<key>AAD2B89C-7893-4919-8AE7-FB672F3A6297</key>
+		<array>
+			<dict>
+				<key>destinationuid</key>
+				<string>489AC7C8-5BA0-4275-85E8-67F7A48C2AB9</string>
+				<key>modifiers</key>
+				<integer>0</integer>
+				<key>modifiersubtext</key>
+				<string></string>
+				<key>vitoclose</key>
+				<false/>
+			</dict>
+			<dict>
+				<key>destinationuid</key>
+				<string>85C215CC-D774-4E37-9B9D-37D5426B73D2</string>
+				<key>modifiers</key>
+				<integer>0</integer>
+				<key>modifiersubtext</key>
+				<string></string>
+				<key>vitoclose</key>
+				<false/>
+			</dict>
+		</array>
+		<key>FFD511F8-9C0D-43C0-9AAD-AC602F09BEE9</key>
+		<array>
+			<dict>
+				<key>destinationuid</key>
+				<string>5A97905D-ADF7-46B2-B527-50271F278C43</string>
+				<key>modifiers</key>
+				<integer>0</integer>
+				<key>modifiersubtext</key>
+				<string></string>
+				<key>vitoclose</key>
+				<false/>
+			</dict>
+		</array>
+	</dict>
+	<key>createdby</key>
+	<string>Roy Rothenberg</string>
+	<key>description</key>
+	<string>Creates a go link from the current webpage and copies it to your clipboard</string>
+	<key>disabled</key>
+	<false/>
+	<key>name</key>
+	<string>Create Go Link from current webpage</string>
+	<key>objects</key>
+	<array>
+		<dict>
+			<key>config</key>
+			<dict>
+				<key>autopaste</key>
+				<false/>
+				<key>clipboardtext</key>
+				<string>{query}</string>
+				<key>ignoredynamicplaceholders</key>
+				<false/>
+				<key>transient</key>
+				<false/>
+			</dict>
+			<key>type</key>
+			<string>alfred.workflow.output.clipboard</string>
+			<key>uid</key>
+			<string>489AC7C8-5BA0-4275-85E8-67F7A48C2AB9</string>
+			<key>version</key>
+			<integer>3</integer>
+		</dict>
+		<dict>
+			<key>config</key>
+			<dict>
+				<key>action</key>
+				<integer>0</integer>
+				<key>argument</key>
+				<integer>0</integer>
+				<key>focusedappvariable</key>
+				<false/>
+				<key>focusedappvariablename</key>
+				<string></string>
+				<key>hotkey</key>
+				<integer>37</integer>
+				<key>hotmod</key>
+				<integer>1179648</integer>
+				<key>hotstring</key>
+				<string>L</string>
+				<key>leftcursor</key>
+				<false/>
+				<key>modsmode</key>
+				<integer>0</integer>
+				<key>relatedAppsMode</key>
+				<integer>0</integer>
+			</dict>
+			<key>type</key>
+			<string>alfred.workflow.trigger.hotkey</string>
+			<key>uid</key>
+			<string>FFD511F8-9C0D-43C0-9AAD-AC602F09BEE9</string>
+			<key>version</key>
+			<integer>2</integer>
+		</dict>
+		<dict>
+			<key>config</key>
+			<dict>
+				<key>concurrently</key>
+				<false/>
+				<key>escaping</key>
+				<integer>68</integer>
+				<key>script</key>
+				<string>on run argv
+  tell application "Google Chrome"
+    set theQuery to get URL of active tab of first window
+  end tell
+  return theQuery
+end run</string>
+				<key>scriptargtype</key>
+				<integer>1</integer>
+				<key>scriptfile</key>
+				<string></string>
+				<key>type</key>
+				<integer>6</integer>
+			</dict>
+			<key>type</key>
+			<string>alfred.workflow.action.script</string>
+			<key>uid</key>
+			<string>5A97905D-ADF7-46B2-B527-50271F278C43</string>
+			<key>version</key>
+			<integer>2</integer>
+		</dict>
+		<dict>
+			<key>config</key>
+			<dict>
+				<key>concurrently</key>
+				<false/>
+				<key>escaping</key>
+				<integer>68</integer>
+				<key>script</key>
+				<string># Based on https://go/golinks_d8acaba
+
+import hashlib
+import http.client
+import os
+import sys
+from urllib.parse import urlencode, urlparse
+
+
+AUTH_TOKEN=os.getenv('GOLINKS_AUTH_TOKEN')
+
+long_url = sys.argv[1]
+short_name = urlparse(long_url).hostname.split('.')[-2] + "_" + hashlib.md5(long_url.encode()).hexdigest()[:7]
+go_link = f"https://go/{short_name}"
+post_fields = {
+    'url': long_url,
+    'name': short_name,
+    'description': "Just some link to some url",
+    'unlisted': 1,
+}
+headers = {
+    'Content-Type': 'application/x-www-form-urlencoded',
+    'Authorization': f"Bearer {AUTH_TOKEN}"
+}
+
+conn = http.client.HTTPSConnection("api.golinks.io")
+payload = urlencode(post_fields).encode()
+conn.request("POST", "/golinks", payload, headers)
+res = conn.getresponse()
+
+if res.code in [201, 409]:
+    sys.stdout.write(go_link)
+else:
+    raise Exception("Unknown Error")</string>
+				<key>scriptargtype</key>
+				<integer>1</integer>
+				<key>scriptfile</key>
+				<string></string>
+				<key>type</key>
+				<integer>9</integer>
+			</dict>
+			<key>type</key>
+			<string>alfred.workflow.action.script</string>
+			<key>uid</key>
+			<string>AAD2B89C-7893-4919-8AE7-FB672F3A6297</string>
+			<key>version</key>
+			<integer>2</integer>
+		</dict>
+		<dict>
+			<key>config</key>
+			<dict>
+				<key>lastpathcomponent</key>
+				<false/>
+				<key>onlyshowifquerypopulated</key>
+				<false/>
+				<key>removeextension</key>
+				<false/>
+				<key>text</key>
+				<string>{query}</string>
+				<key>title</key>
+				<string>Go Link copied to clipboard</string>
+			</dict>
+			<key>type</key>
+			<string>alfred.workflow.output.notification</string>
+			<key>uid</key>
+			<string>85C215CC-D774-4E37-9B9D-37D5426B73D2</string>
+			<key>version</key>
+			<integer>1</integer>
+		</dict>
+	</array>
+	<key>readme</key>
+	<string></string>
+	<key>uidata</key>
+	<dict>
+		<key>489AC7C8-5BA0-4275-85E8-67F7A48C2AB9</key>
+		<dict>
+			<key>xpos</key>
+			<real>835</real>
+			<key>ypos</key>
+			<real>50</real>
+		</dict>
+		<key>5A97905D-ADF7-46B2-B527-50271F278C43</key>
+		<dict>
+			<key>xpos</key>
+			<real>360</real>
+			<key>ypos</key>
+			<real>140</real>
+		</dict>
+		<key>85C215CC-D774-4E37-9B9D-37D5426B73D2</key>
+		<dict>
+			<key>xpos</key>
+			<real>835</real>
+			<key>ypos</key>
+			<real>225</real>
+		</dict>
+		<key>AAD2B89C-7893-4919-8AE7-FB672F3A6297</key>
+		<dict>
+			<key>xpos</key>
+			<real>575</real>
+			<key>ypos</key>
+			<real>140</real>
+		</dict>
+		<key>FFD511F8-9C0D-43C0-9AAD-AC602F09BEE9</key>
+		<dict>
+			<key>xpos</key>
+			<real>160</real>
+			<key>ypos</key>
+			<real>140</real>
+		</dict>
+	</dict>
+	<key>userconfigurationconfig</key>
+	<array>
+		<dict>
+			<key>config</key>
+			<dict>
+				<key>default</key>
+				<string></string>
+				<key>placeholder</key>
+				<string></string>
+				<key>required</key>
+				<true/>
+				<key>trim</key>
+				<true/>
+			</dict>
+			<key>description</key>
+			<string>Get your auth token from https://app.golinks.io/settings.php#/api</string>
+			<key>label</key>
+			<string>GoLinks Auth Token</string>
+			<key>type</key>
+			<string>textfield</string>
+			<key>variable</key>
+			<string>GOLINKS_AUTH_TOKEN</string>
+		</dict>
+	</array>
+	<key>variablesdontexport</key>
+	<array/>
+	<key>version</key>
+	<string>0.0.2</string>
+	<key>webaddress</key>
+	<string>https://github.com/vuduchild/alfred-create-go-link</string>
+</dict>
+</plist>
